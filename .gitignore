@@ -1,0 +1,9 @@
+# Configuration locale / informations sensibles
+config/database.php
+
+# Configuration locale de VS Code
+.vscode/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
