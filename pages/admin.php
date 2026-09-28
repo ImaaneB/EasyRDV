@@ -11,6 +11,7 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 require_once '../config/database.php';
+require_once '../services/MongoDBService.php';
 
 
 /*
@@ -669,6 +670,66 @@ $nombreAnnules =
     $requeteAnnules->fetchColumn();
 
 
+    /*
+    Statistiques NoSQL :
+    calcul depuis MySQL puis stockage et lecture dans MongoDB.
+*/
+
+$statistiquesMongoDB = [];
+
+try {
+
+    /*
+        MySQL reste la source principale des rendez-vous.
+        On calcule ici le nombre de rendez-vous confirmés
+        pour chaque prestation.
+    */
+   $requeteStatistiquesPrestations = $pdo->query(
+    "SELECT
+        prestation.nom AS prestation,
+        COUNT(rendez_vous.id) AS nombre_reservations
+     FROM prestation
+     LEFT JOIN rendez_vous
+        ON prestation.id = rendez_vous.id_prestation
+        AND rendez_vous.statut = 'confirme'
+     GROUP BY prestation.nom
+     ORDER BY nombre_reservations DESC"
+);
+    $statistiquesMySQL =
+        $requeteStatistiquesPrestations->fetchAll(
+            PDO::FETCH_ASSOC
+        );
+
+    /*
+        Enregistrement des statistiques calculées
+        dans la base NoSQL MongoDB.
+    */
+    $mongoDB = new MongoDBService();
+
+    $enregistrementMongoDB =
+        $mongoDB->enregistrerStatistiquesPrestations(
+            $statistiquesMySQL
+        );
+
+    /*
+        Lecture depuis MongoDB.
+        Les données affichées ensuite dans l'administration
+        proviendront donc bien de la base NoSQL.
+    */
+    if ($enregistrementMongoDB) {
+        $statistiquesMongoDB =
+            $mongoDB->obtenirStatistiquesPrestations();
+    }
+
+} catch (Throwable $e) {
+
+    /*
+        Une indisponibilité de MongoDB ne doit pas empêcher
+        l'administrateur d'utiliser le reste de l'application.
+    */
+    $statistiquesMongoDB = [];
+}
+
 /* =========================================================
    LISTE DES RENDEZ-VOUS
 ========================================================= */
@@ -981,6 +1042,153 @@ $disponibilites = $requeteDisponibilites->fetchAll(
 
         </section>
 
+
+                <!-- STATISTIQUES NOSQL -->
+
+        <section class="admin-section">
+
+            <div class="admin-section-heading">
+
+                <div class="admin-section-title">
+
+                    <span class="admin-section-number purple">
+                        ◈
+                    </span>
+
+                    <div>
+                        <h2>Réservations par prestation</h2>
+
+                        <p>
+                            Statistiques issues de la base NoSQL MongoDB.
+                        </p>
+                    </div>
+
+                </div>
+
+                <span class="admin-section-count">
+                    MongoDB
+                </span>
+
+            </div>
+
+
+            <?php if (empty($statistiquesMongoDB)): ?>
+
+                <div class="admin-empty">
+                    Aucune statistique disponible.
+                </div>
+
+            <?php else: ?>
+
+
+                <div class="admin-nosql-chart">
+
+    <?php
+
+        $maximumReservations = 1;
+
+        foreach ($statistiquesMongoDB as $statistique) {
+            $nombre = (int) $statistique['nombre_reservations'];
+
+            if ($nombre > $maximumReservations) {
+                $maximumReservations = $nombre;
+            }
+        }
+
+    ?>
+
+    <?php foreach ($statistiquesMongoDB as $statistique): ?>
+
+        <?php
+
+            $nombreReservations =
+                (int) $statistique['nombre_reservations'];
+
+            $pourcentage =
+                ($nombreReservations / $maximumReservations) * 100;
+
+        ?>
+
+        <div class="admin-chart-row">
+
+            <div class="admin-chart-label">
+                <?php
+                    echo htmlspecialchars(
+                        $statistique['prestation']
+                    );
+                ?>
+            </div>
+
+            <div class="admin-chart-track">
+
+                <div
+                    class="admin-chart-bar"
+                    style="width: <?php
+                        echo (float) $pourcentage;
+                    ?>%;"
+                ></div>
+
+            </div>
+
+            <strong class="admin-chart-value">
+                <?php echo $nombreReservations; ?>
+            </strong>
+
+        </div>
+
+    <?php endforeach; ?>
+
+</div>
+
+                <div class="admin-table-wrapper">
+
+                    <table class="admin-table">
+
+                        <thead>
+                            <tr>
+                                <th>Prestation</th>
+                                <th>Rendez-vous confirmés</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                        <?php foreach ($statistiquesMongoDB as $statistique): ?>
+
+                            <tr>
+
+                                <td>
+                                    <strong>
+                                        <?php
+                                            echo htmlspecialchars(
+                                                $statistique['prestation']
+                                            );
+                                        ?>
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <?php
+                                        echo (int)
+                                            $statistique[
+                                                'nombre_reservations'
+                                            ];
+                                    ?>
+                                </td>
+
+                            </tr>
+
+                        <?php endforeach; ?>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            <?php endif; ?>
+
+        </section>
 
 
         <!-- =====================================================
