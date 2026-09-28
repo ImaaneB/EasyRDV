@@ -2181,6 +2181,10 @@ a {
     font-size: 10px;
     font-weight: 600;
 }
+.booking-v2-date-input:focus-within {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.18);
+}
 
 
 /* =========================================================
