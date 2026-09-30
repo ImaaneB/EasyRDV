@@ -4,9 +4,9 @@ EasyRDV est une application web de prise de rendez-vous en ligne destinée à un
 
 Ce projet a été réalisé dans le cadre de ma formation **Développeur Web et Web Mobile (DWWM)**.
 
-L'application permet aux clients de créer un compte, de se connecter, de consulter les créneaux disponibles, de réserver une prestation et de gérer leurs rendez-vous.
+L'application permet aux clients de créer un compte, de se connecter, de consulter les prestations et les créneaux disponibles, de réserver un rendez-vous et de gérer leurs réservations.
 
-Une interface d'administration permet également de gérer les prestations, les disponibilités et les rendez-vous.
+Une interface d'administration permet également de gérer les rendez-vous, les prestations, les disponibilités et de consulter des statistiques.
 
 ---
 
@@ -27,10 +27,10 @@ Une interface d'administration permet également de gérer les prestations, les 
 
 - Connexion avec un compte administrateur
 - Tableau de bord d'administration
-- Consultation des rendez-vous
+- Consultation et gestion des rendez-vous
 - Gestion des prestations
 - Gestion des disponibilités
-- Ajout, modification et suppression de données selon les fonctionnalités prévues dans l'administration
+- Consultation des statistiques de réservation
 
 ---
 
@@ -48,12 +48,15 @@ Une interface d'administration permet également de gérer les prestations, les 
 - PHP 8
 - PDO
 - MySQL
+- MongoDB
 
 ### Environnement de développement
 
 - XAMPP
 - Apache
 - phpMyAdmin
+- MongoDB Community Server
+- MongoDB Compass
 - Visual Studio Code
 - Git
 - GitHub
@@ -61,6 +64,8 @@ Une interface d'administration permet également de gérer les prestations, les 
 ### Hébergement
 
 L'application est déployée sur **InfinityFree** avec une base de données MySQL distante.
+
+MongoDB est utilisé dans l'environnement local pour enregistrer et consulter les statistiques de réservation.
 
 ---
 
@@ -75,9 +80,22 @@ EasyRDV/
 │   ├── js/
 │   │   └── app.js
 │   └── images/
+│       └── salon.jpg
 │
 ├── config/
 │   └── database.php
+│
+├── database/
+│   ├── schema.sql
+│   └── seed.sql
+│
+├── docs/
+│   ├── documentation-technique.md
+│   └── diagrams/
+│       ├── mcd-easyrdv.png
+│       ├── diagramme-cas-utilisation-easyrdv.png
+│       ├── diagramme-sequence-reservation-easyrdv.png
+│       └── diagramme-architecture-technique-easyrdv.png
 │
 ├── pages/
 │   ├── connexion.php
@@ -86,6 +104,9 @@ EasyRDV/
 │   ├── espace-client.php
 │   ├── admin.php
 │   └── deconnexion.php
+│
+├── services/
+│   └── MongoDBService.php
 │
 ├── index.html
 ├── README.md
